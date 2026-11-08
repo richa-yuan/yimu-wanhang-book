@@ -1,13 +1,26 @@
 ---
 name: yimu-wanhang-book
+display_name: 一目万行读书要义
+display_name_en: Ten Thousand Lines at a Glance
 description: >
-  一目万行读书要义 —— 把一本电子书通读一遍，落成本地可检索书库，先给全书精华要义，
-  之后任何追问都能回到原文、按「第N章 · 行L」作答。
+  通读整本书并落成本地可检索书库，先给全书精华要义，之后任何追问都能回到原文、按「第N章 · 行L」作答。
   当用户给出一本书（附件 PDF / EPUB / TXT / DOCX，或只报书名），并想「快速读完 / 通读 / 提炼精华 /
   这本书讲了什么 / 帮我速读 / 记住这本书 / 这本书的要点」，或对某本书提出跨章节追问
   （「作者在第五章到底怎么论证的」「书里关于 X 的原话是什么」「这个说法出自哪一章」）时，使用本技能。
   只要需求是「整本书 + 记住内容 + 能被追问」，就用本技能——哪怕用户只说「帮我看看这本书」。
   不要用几句简介代替建档通读；也不要拿模型自身知识冒充书里的内容。
+description_zh: 把整本书读进本地书库，先给精华，再按「第N章 · 行L」接住你所有追问。
+description_en: Read a whole book into a local searchable library, get its essence first, then answer any follow-up with chapter and line citations.
+examples_zh:
+  - "帮我读一下《源泉》，先给我精华要点"
+  - "把这本 EPUB 通读一遍记下来，我待会儿要追问细节"
+  - "书里第七章关于身份认同，作者的原话是什么？"
+examples_en:
+  - "Read this book and give me the key takeaways first"
+  - "Index this EPUB so I can ask detailed questions about it later"
+  - "What exactly does the author say about identity in chapter 7?"
+version: 1.0.0
+author: "richa-yuan"
 ---
 
 # 一目万行读书要义
@@ -32,6 +45,9 @@ description: >
 
 ## 书库结构
 
+下面这套文件是 `scripts/ingest.py` **运行时生成在书库目录里的产物，不属于本技能包**，
+包内只有 `SKILL.md`、`scripts/`、`references/` 三部分。
+
 ```
 ~/.workbuddy/books/
 ├── INDEX.md                 全局书目登记
@@ -45,7 +61,7 @@ description: >
     └── essence.md           最终要义成稿
 ```
 
-`fulltext.md` 是唯一真相源。生成后**不要编辑、不要重排**——所有引用都靠它的行号。
+`<书库>/fulltext.md` 是唯一真相源。生成后**不要编辑、不要重排**——所有引用都靠它的行号。
 
 ## 工作流
 
@@ -59,7 +75,7 @@ elif 只有书名：
     没有 → B 联网路线（见文末），并在输出里显式标注「本次无全文」
 ```
 
-先跑 `lookup.py --list` 看书库里有没有，别重复建档。
+先跑 `scripts/lookup.py --list` 看书库里有没有，别重复建档。
 
 ### 第 1 步：建档（全文路线）
 
@@ -97,7 +113,7 @@ python3 <skill_dir>/scripts/lookup.py <书> --toc
 
 1. 每批 1–3 章，合计 **不超过 25000 字**。
 2. 用 Read 工具按 `offset` / `limit` 精确读对应的行区间（`fulltext.md` 的行号可直接用）。
-3. 读完立刻写回 `digest.md` 里对应章节，五段式：
+3. 读完立刻写回 `<书库>/digest.md` 里对应章节，五段式：
    - 核心论点（一句话）
    - 骨架推进（这章在全书论证链条上的位置）
    - 关键论据（案例、数据、实验、引用）
@@ -121,7 +137,7 @@ python3 <skill_dir>/scripts/lookup.py <书> --toc
 
 ### 第 3 步：出要义
 
-按 `references/essence-template.md` 的模板产出。默认模块（可依书的类型裁剪）：
+按 @references/essence-template.md 的模板产出。默认模块（可依书的类型裁剪）：
 
 1. 一句话定位（这书到底在解决什么问题）
 2. 全书骨架（章节怎么推进论证）
@@ -144,7 +160,7 @@ python3 <skill_dir>/scripts/lookup.py <书> --toc
 
 ```
 理解问题 → 抽 2–4 个核心词（书名特有的词最好用）
-  → lookup.py <书> 词1 词2      # 多个词是 OR 关系
+  → scripts/lookup.py <书> 词1 词2   # 多个词是 OR 关系
   → 命中：Read 命中处上下文 / 整章，确认语境
   → 未命中：换同义词再试，最多 2 轮
   → 仍无：直接说「书里没找到」，别圆场
@@ -153,10 +169,10 @@ python3 <skill_dir>/scripts/lookup.py <书> --toc
 检索示例：
 
 ```bash
-lookup.py 原子习惯 身份认同            # 关键词
-lookup.py 原子习惯 "two-minute rule"   # 英文短语
-lookup.py 原子习惯 --chapter 7 --max 0 # 整章拉出来读
-lookup.py 原子习惯 --status            # 看精读覆盖到哪
+scripts/lookup.py 原子习惯 身份认同              # 关键词
+scripts/lookup.py 原子习惯 "two-minute rule"     # 英文短语
+scripts/lookup.py 原子习惯 --chapter 7 --max 0   # 整章拉出来读
+scripts/lookup.py 原子习惯 --status              # 看精读覆盖到哪
 ```
 
 答题格式：
@@ -167,7 +183,7 @@ lookup.py 原子习惯 --status            # 看精读覆盖到哪
 最后展开：这在你问的语境里意味着什么。
 ```
 
-详细规则见 `references/qa-rules.md`，特别是：书里没写怎么办、作者前后矛盾怎么办、能不能补充外部知识。
+详细规则见 @references/qa-rules.md，特别是：书里没写怎么办、作者前后矛盾怎么办、能不能补充外部知识。
 
 ### 第 5 步：维护
 
@@ -179,12 +195,12 @@ lookup.py 原子习惯 --status            # 看精读覆盖到哪
 
 | 目的 | 命令 |
 |---|---|
-| 建档 | `ingest.py <file> [--title X --author Y --blocksize 9000 --force]` |
-| 列书库 | `lookup.py --list` |
-| 章节+行号 | `lookup.py <书> --toc` |
-| 精读进度 | `lookup.py <书> --status` |
-| 关键词检索 | `lookup.py <书> 词1 词2 [-C 3] [--limit 20]` |
-| 读整章 | `lookup.py <书> --chapter N [--max 0]` |
+| 建档 | `scripts/ingest.py <file> [--title X --author Y --blocksize 9000 --force]` |
+| 列书库 | `scripts/lookup.py --list` |
+| 章节+行号 | `scripts/lookup.py <书> --toc` |
+| 精读进度 | `scripts/lookup.py <书> --status` |
+| 关键词检索 | `scripts/lookup.py <书> 词1 词2 [-C 3] [--limit 20]` |
+| 读整章 | `scripts/lookup.py <书> --chapter N [--max 0]` |
 
 脚本路径：`<skill_dir>/scripts/`。纯 Python 标准库；PDF 走 `workbuddy-pdf` CLI
 （非 WorkBuddy 环境请先自行把 PDF 转成 txt，或设 `WORKBUDDY_PDF_SKILL`，详见仓库 README）。
@@ -214,5 +230,5 @@ lookup.py 原子习惯 --status            # 看精读覆盖到哪
 
 ## 参考文件
 
-- `references/essence-template.md`——要义成稿模板与范例，第 3 步必读。
-- `references/qa-rules.md`——追问应答纪律，第 4 步必读。
+- @references/essence-template.md —— 要义成稿模板与范例，第 3 步必读。
+- @references/qa-rules.md —— 追问应答纪律，第 4 步必读。
