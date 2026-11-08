@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+
+# 书库与电子书正文绝不入库
+books/
+*.epub
+*.pdf
+*.mobi
+*.azw3
+*.azw
+*.docx
+*.txt
+fulltext.md
+essence.md
